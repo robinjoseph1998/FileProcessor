@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"bufio"
 	"fmt"
 	"net/http"
 	"os"
@@ -21,10 +22,23 @@ func FileReader(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "can't save uplaoded file", "error": err.Error()})
 		return
 	}
-	dat, err := os.ReadFile(UploadFilePath)
+
+	file, err := os.Open(UploadFilePath)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"message": "can't read file", "error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "can't open the file", "error": err.Error()})
 		return
 	}
-	fmt.Println("Data", dat)
+	scanner := bufio.NewScanner(file)
+	scanner.Split(bufio.ScanLines)
+	var FileDatas []string
+
+	for scanner.Scan() {
+		FileDatas = append(FileDatas, scanner.Text())
+	}
+
+	file.Close()
+
+	for _, eachLine := range FileDatas {
+		fmt.Println(eachLine)
+	}
 }
