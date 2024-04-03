@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"path/filepath"
 
 	"github.com/gin-gonic/gin"
 )
@@ -17,28 +18,37 @@ func FileReader(c *gin.Context) {
 		return
 	}
 	folderpath := "/home/lenovo/FileProcessorr/files"
-	UploadFilePath := folderpath + File.Filename
+	UploadFilePath := filepath.Join(folderpath, File.Filename)
 	if err := c.SaveUploadedFile(File, UploadFilePath); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"message": "can't save uplaoded file", "error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "can't save uploaded file", "error": err.Error()})
 		return
 	}
+	DataChan := make(chan []string)
+	defer close(DataChan)
+	go func(filePath string) {
+		file, err := os.Open(UploadFilePath)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"message": "can't open the file", "error": err.Error()})
+			return
+		}
+		scanner := bufio.NewScanner(file)
+		scanner.Split(bufio.ScanLines)
+		var FileDatas []string
 
-	file, err := os.Open(UploadFilePath)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"message": "can't open the file", "error": err.Error()})
-		return
+		for scanner.Scan() {
+			FileDatas = append(FileDatas, scanner.Text())
+		}
+
+		defer file.Close()
+
+		DataChan <- FileDatas
+
+	}(folderpath)
+
+	fileData := <-DataChan
+
+	for _, eachText := range fileData {
+		fmt.Println(eachText)
 	}
-	scanner := bufio.NewScanner(file)
-	scanner.Split(bufio.ScanLines)
-	var FileDatas []string
 
-	for scanner.Scan() {
-		FileDatas = append(FileDatas, scanner.Text())
-	}
-
-	file.Close()
-
-	for _, eachLine := range FileDatas {
-		fmt.Println(eachLine)
-	}
 }
