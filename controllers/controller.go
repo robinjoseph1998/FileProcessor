@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"github.com/gin-gonic/gin"
 )
@@ -48,12 +49,19 @@ func FileReader(c *gin.Context) {
 
 	fileData := <-DataChan
 	Text := make(map[string]int)
-	for _, eachText := range fileData {
-		words := strings.Fields(eachText)
-		for _, eachWord := range words {
-			Text[eachWord]++
-		}
 
-	}
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		for _, eachText := range fileData {
+			words := strings.Fields(eachText)
+			for _, eachWord := range words {
+				Text[eachWord]++
+			}
+
+		}
+	}()
+	wg.Wait()
 	c.JSON(http.StatusOK, gin.H{"set": Text})
 }
