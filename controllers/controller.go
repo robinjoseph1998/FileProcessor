@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"bufio"
-	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -14,7 +13,6 @@ import (
 
 func FileReader(c *gin.Context) {
 	File, err := c.FormFile("file")
-	fmt.Println("call received")
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"message": "something wrong in the request", "error": err.Error()})
 		return
