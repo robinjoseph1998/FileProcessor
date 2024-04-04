@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -46,9 +47,13 @@ func FileReader(c *gin.Context) {
 	}(folderpath)
 
 	fileData := <-DataChan
-
+	Text := make(map[string]int)
 	for _, eachText := range fileData {
-		fmt.Println(eachText)
-	}
+		words := strings.Fields(eachText)
+		for _, eachWord := range words {
+			Text[eachWord]++
+		}
 
+	}
+	c.JSON(http.StatusOK, gin.H{"set": Text})
 }
